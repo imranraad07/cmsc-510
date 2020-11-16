@@ -34,24 +34,17 @@ class Model(Model):
         self.dropout = layers.Dropout(rate=0.5)
         self.out = layers.Dense(output_size)
 
-    def call(self, x, is_training=False, **kwargs):
-        x = tf.reshape(x, [-1, 28, 28, 1])
-        x = self.conv1(x)
-        x = self.maxpool1(x)
-        x = self.conv2(x)
-        x = self.maxpool2(x)
-        x = self.flatten(x)
-        x = self.fc1(x)
-        x = self.dropout(x, training=is_training)
-        x = self.out(x)
-        if not is_training:
-            x = tf.nn.softmax(x)
-        return x
-
-
-def accuracy(y_pred, y_true):
-    correct_prediction = tf.equal(tf.argmax(y_pred, 1), tf.cast(y_true, tf.int64))
-    return tf.reduce_mean(tf.cast(correct_prediction, tf.float32), axis=-1)
+    def call(self, x, **kwargs):
+        out = tf.reshape(x, [-1, 28, 28, 1])
+        out = self.conv1(out)
+        out = self.maxpool1(out)
+        out = self.conv2(out)
+        out = self.maxpool2(out)
+        out = self.flatten(out)
+        out = self.fc1(out)
+        out = self.dropout(out)
+        out = self.out(out)
+        return out
 
 
 cnn = Model()
@@ -66,7 +59,7 @@ def cross_entropy_loss(x, y):
 
 def run_optimization(x, y):
     with tf.GradientTape() as g:
-        pred = cnn(x, is_training=True)
+        pred = cnn(x)
         loss = cross_entropy_loss(pred, y)
 
     trainable_variables = cnn.trainable_variables
@@ -85,7 +78,6 @@ for epoch in range(epochs):
         run_optimization(batch_x, batch_y)
         pred = cnn(batch_x)
         loss = cross_entropy_loss(pred, batch_y)
-        acc = accuracy(pred, batch_y)
         running_loss = running_loss + loss
     print("Epoch {} - Training loss: {}".format(epoch, running_loss / training_steps))
     losses.append(running_loss)
@@ -100,6 +92,10 @@ plt.title('Loss rate vs. iterations of training dataset (tensorflow)')
 plt.show()
 
 pred = cnn(x_test)
-print("Model Accuracy = ", accuracy(pred, y_test))
+
+correct_prediction = tf.equal(tf.argmax(pred, 1), tf.cast(y_test, tf.int64))
+acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), axis=-1)
+
+print("Model Accuracy = ", acc)
 
 # Model Accuracy =  tf.Tensor(0.9899, shape=(), dtype=float32)
