@@ -33,7 +33,7 @@ class Model(nn.Module):
             nn.Conv2d(hidden_sizes[0], hidden_sizes[1], kernel_size=5, stride=1, padding=2),
             nn.ReLU(), nn.MaxPool2d(kernel_size=2, stride=2))
         self.drop_out = nn.Dropout()
-        self.fc1 = nn.Linear(7*7*16, 1024)
+        self.fc1 = nn.Linear(7 * 7 * 16, 1024)
         self.fc2 = nn.Linear(1024, output_size)
 
     def forward(self, x):
@@ -84,5 +84,3 @@ with torch.no_grad():
         all_count += labels.size(0)
         correct_count += (predicted == labels).sum()
 print("Model Accuracy = ", (correct_count / all_count))
-
-# Model Accuracy =  tensor(0.9850)

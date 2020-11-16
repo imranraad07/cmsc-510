@@ -8,6 +8,7 @@ from tensorflow.keras import Model, layers
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import matplotlib.pyplot as plt
+from tensorflow import keras
 
 batch_size = 64
 hidden_sizes = [32, 16]
@@ -50,52 +51,24 @@ class Model(Model):
 cnn = Model()
 optimizer = tf.optimizers.Adam(learning_rate)
 
-
-def cross_entropy_loss(x, y):
-    y = tf.cast(y, tf.int64)
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=x)
-    return tf.reduce_mean(loss)
-
-
-def run_optimization(x, y):
-    with tf.GradientTape() as g:
-        pred = cnn(x)
-        loss = cross_entropy_loss(pred, y)
-
-    trainable_variables = cnn.trainable_variables
-    gradients = g.gradient(loss, trainable_variables)
-    optimizer.apply_gradients(zip(gradients, trainable_variables))
-
-
-training_steps = 938
 time0 = time()
 epochs = 15
-losses = []
-iteration = []
-for epoch in range(epochs):
-    running_loss = 0
-    for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
-        run_optimization(batch_x, batch_y)
-        pred = cnn(batch_x)
-        loss = cross_entropy_loss(pred, batch_y)
-        running_loss = running_loss + loss
-    print("Epoch {} - Training loss: {}".format(epoch, running_loss / training_steps))
-    losses.append(running_loss)
-    iteration.append(epoch)
+
+cnn.compile(
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    optimizer=optimizer,
+    metrics=["accuracy"],
+)
+
+history = cnn.fit(x_train, y_train, batch_size=batch_size, epochs=15)
 
 print("Training Time (in minutes) =", (time() - time0) / 60)
 
-plt.plot(iteration, losses, color='blue')
+plt.plot(history.epoch, history.history['loss'], color='blue')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title('Loss rate vs. iterations of training dataset (tensorflow)')
 plt.show()
 
-pred = cnn(x_test)
-
-correct_prediction = tf.equal(tf.argmax(pred, 1), tf.cast(y_test, tf.int64))
-acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), axis=-1)
-
-print("Model Accuracy = ", acc)
-
-# Model Accuracy =  tf.Tensor(0.9899, shape=(), dtype=float32)
+pred = cnn.fit((x_test), y_test)
+print("Model Accuracy = ", pred.history['accuracy'])
